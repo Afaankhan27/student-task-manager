@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }} | Student Task Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark">🎓</div><div class="brand-name">Student<br>Task Manager</div>
+    <div class="brand-tag">Plan · Track · Complete</div>
+    <nav>
+      <a href="{{ url_for('dashboard') }}">⌂ <span>Dashboard</span></a>
+      <a href="{{ url_for('dashboard') }}#task-list">☷ <span>View Tasks</span></a>
+      <a class="{{ 'active' if active_page == 'completed' else '' }}" href="{{ url_for('completed_tasks') }}">✓ <span>Completed Tasks</span></a>
+      <a class="{{ 'active' if active_page == 'deleted' else '' }}" href="{{ url_for('deleted_tasks') }}">▤ <span>Deleted Tasks</span></a>
+    </nav>
+    <div class="sidebar-bottom"><div class="welcome">👤 &nbsp; Welcome,<br><b>Student!</b></div></div>
+  </aside>
+  <main class="main-content">
+    <header class="hero"><div class="hero-icon">{% if active_page == 'completed' %}✓{% else %}▤{% endif %}</div>
+      <div><h1>{{ page_title }}</h1><p>{{ subtitle }}</p></div>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="flash-area">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    <section class="panel task-panel standalone">
+      <div class="section-heading"><h2>{{ page_title }}</h2><a class="back-link" href="{{ url_for('dashboard') }}">← Back to Dashboard</a></div>
+      {% if tasks %}
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Task</th><th>Category</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>{% for task in tasks %}<tr>
+        <td>{{ loop.index }}</td><td class="task-title">{{ task.title }}</td><td><span class="category">{{ task.category }}</span></td>
+        <td>{{ task.due_date or '—' }}</td><td><span class="status {{ 'done' if task.is_done else 'pending' }}">{{ 'Completed' if task.is_done else 'Pending' }}</span></td>
+        <td class="actions">
+          {% if active_page == 'deleted' %}
+          <form method="post" action="{{ url_for('restore_task', task_id=task.id) }}"><button class="done-btn">↶ Restore</button></form>
+          <form method="post" action="{{ url_for('permanent_delete', task_id=task.id) }}" onsubmit="return confirm('Permanently delete this task?')"><button class="delete-btn">Delete forever</button></form>
+          {% else %}
+          <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}"><button class="delete-btn">Move to Deleted</button></form>
+          {% endif %}
+        </td></tr>{% endfor %}</tbody></table></div>
+      {% else %}<div class="empty-state"><div>✨</div><h3>{{ empty_message }}</h3><p><a href="{{ url_for('dashboard') }}">Return to your dashboard</a></p></div>{% endif %}
+    </section>
+    <footer>© 2026 Student Task Manager &nbsp; | &nbsp; Built with <b>Flask</b> ♥</footer>
+  </main>
+</div>
+</body></html>
