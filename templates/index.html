@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Task Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-mark">🎓</div>
+    <div class="brand-name">Student<br>Task Manager</div>
+    <div class="brand-tag">Plan · Track · Complete</div>
+    <nav>
+      <a class="{{ 'active' if active_page == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}">⌂ <span>Dashboard</span></a>
+      <a href="{{ url_for('dashboard') }}#task-list">☷ <span>View Tasks</span></a>
+      <a class="{{ 'active' if active_page == 'completed' else '' }}" href="{{ url_for('completed_tasks') }}">✓ <span>Completed Tasks</span></a>
+      <a class="{{ 'active' if active_page == 'deleted' else '' }}" href="{{ url_for('deleted_tasks') }}">▤ <span>Deleted Tasks</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="welcome">👤 &nbsp; Welcome,<br><b>Student!</b></div>
+      <div class="small-note">Your personal study organiser</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="hero">
+      <div class="hero-icon">✓</div>
+      <div><h1>Student Task Manager</h1><p>Organize your tasks, be more productive!</p></div>
+      <div class="today">{{ today_label }}</div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="flash-area">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>{% endif %}
+    {% endwith %}
+
+    <section class="stats">
+      <div class="stat blue"><span>▤</span><div><small>Total Tasks</small><strong>{{ total }}</strong></div></div>
+      <div class="stat green"><span>✓</span><div><small>Completed</small><strong>{{ completed }}</strong></div></div>
+      <div class="stat orange"><span>◷</span><div><small>Pending</small><strong>{{ pending }}</strong></div></div>
+      <div class="stat purple"><span>▤</span><div><small>Deleted</small><strong>{{ deleted }}</strong></div></div>
+    </section>
+
+    <section class="panel add-panel">
+      <h2>＋ Add New Task</h2>
+      <form method="post" class="add-form">
+        <input name="title" maxlength="120" placeholder="Enter your task title..." required>
+        <select name="category" aria-label="Task category">
+          {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
+        </select>
+        <input type="date" name="due_date" aria-label="Due date">
+        <button class="primary-btn" type="submit">➤ &nbsp; Add Task</button>
+      </form>
+    </section>
+
+    <section class="panel task-panel" id="task-list">
+      <div class="section-heading"><h2>☷ &nbsp; Your Tasks</h2>
+        <div class="filters">
+          <button class="filter active" data-filter="all">All</button>
+          <button class="filter" data-filter="pending">Pending</button>
+          <button class="filter" data-filter="completed">Completed</button>
+        </div>
+      </div>
+      {% if tasks %}
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Task</th><th>Category</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for task in tasks %}
+          <tr data-status="{{ 'completed' if task.is_done else 'pending' }}">
+            <td>{{ loop.index }}</td>
+            <td class="task-title {{ 'done-title' if task.is_done else '' }}">{{ task.title }}</td>
+            <td><span class="category">{{ task.category }}</span></td>
+            <td>{{ task.due_date or '—' }}</td>
+            <td><span class="status {{ 'done' if task.is_done else 'pending' }}">{{ 'Completed' if task.is_done else 'Pending' }}</span></td>
+            <td class="actions">
+              <form method="post" action="{{ url_for('toggle_task', task_id=task.id) }}">
+                <button class="done-btn" type="submit">{{ '↶ Undo' if task.is_done else '✓ Mark Done' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Move this task to Deleted Tasks?')">
+                <button class="delete-btn" type="submit">▤ Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}<div class="empty-state"><div>📝</div><h3>No tasks yet</h3><p>Add your first task using the form above.</p></div>{% endif %}
+    </section>
+    <footer>© 2026 Student Task Manager &nbsp; | &nbsp; Built with <b>Flask</b> ♥</footer>
+  </main>
+</div>
+<script>
+document.querySelectorAll(".filter").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+    button.classList.add("active");
+    const selected = button.dataset.filter;
+    document.querySelectorAll("tbody tr").forEach(row => {
+      row.hidden = selected !== "all" && row.dataset.status !== selected;
+    });
+  });
+});
+</script>
+</body>
+</html>
